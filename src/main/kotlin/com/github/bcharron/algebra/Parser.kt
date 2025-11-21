@@ -43,7 +43,7 @@ class Parser {
     }
 
     // Split expression into a list of tokens
-    fun tokenize(expr: String): Array<String> {
+    fun tokenize(expr: String): List<String> {
         var list = mutableListOf<String>()
         val operators = setOf('(', ')', '+', '-', '/', '*', '^', '=')
 
@@ -75,19 +75,37 @@ class Parser {
             }
         }
 
-        return list.toTypedArray()
+        return list.toList()
     }
 
-    fun buildTree(elements: Array<String>) {
+    fun buildTree(elements: List<String>): ExprNode {
+        val stack = ArrayDeque<ExprNode>()
+
+        for ((idx, entry) in elements.withIndex()) {
+            println("entry: ${entry} idx: ${idx}")
+
+            if (entry[0].isDigit()) {
+                val i = if ('.' in entry) entry.toDouble() else entry.toLong()
+                val c = Constant(i)
+                stack.add(c)
+            } else if (entry[0].isLetter()) {
+                stack.add(Variable(entry))
+            } else {
+                val e = when (entry) {
+                    "(" -> buildTree(elements.subList(idx, elements.size))
+                    "+" -> Addition(stack.removeLast(), buildTree(elements.subList(idx, elements.size)))
+                    else -> throw IllegalArgumentException("Invalid expression, did not expect '${entry}'")
+                }
+            }
+        }
+
+        return Constant(1)
     }
 
     fun parse(expr: String): ExprNode {
         val elements = tokenize(expr)
+        val tree = buildTree(elements)
 
-        for (entry in elements) {
-            println("entry: [$entry]")
-        }
-
-        return Constant(1)
+        return tree
     }
 }
