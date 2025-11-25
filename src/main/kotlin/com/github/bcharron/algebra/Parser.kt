@@ -153,7 +153,7 @@ class Parser {
      */
     fun findLowestPriority(elements: List<String>): Int {
         var lowestIndex = -1
-        var lowestValue = 99
+        var lowestValue = Int.MAX_VALUE
 
         var parens = 0
 
@@ -178,6 +178,10 @@ class Parser {
                     }
                 }
             }
+        }
+
+        if (parens != 0) {
+            throw IllegalArgumentException("Imbalanced parenthesis in '$elements'")
         }
 
         return lowestIndex
