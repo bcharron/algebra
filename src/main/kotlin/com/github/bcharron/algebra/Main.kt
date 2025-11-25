@@ -12,17 +12,9 @@ enum class Token {
 }
 
 fun main(args: Array<String>) {
-    val mul = Multiplication(Variable("x"), Constant(2))
-    val addition = Addition(Constant(1), mul)
-    val two = Constant(2)
-    val equals = Equals(addition, two)
-    val tree = equals
-
-    println("Tree: $tree")
-
     val parser = Parser()
     // val tree2 = parse(args.firstOrNull() ?: "0")
-    val tree2 = parser.parse("2x+22 *9  - (4+2) = 15^2 + ln(4)")
+    val tree = parser.parse("2x+22 *9  - (4+2) = 15^2 + ln(4)")
 
-    println("Tree 2: $tree2")
+    println("Tree: $tree")
 }

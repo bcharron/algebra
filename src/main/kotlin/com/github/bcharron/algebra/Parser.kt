@@ -23,12 +23,13 @@ class Parser {
 
     private final val operators =
         mapOf(
-            "(" to Operator("(", 5, OperatorType.Unary, ExprNode::class.java),
-            "^" to Operator("^", 4, OperatorType.Binary, Exponent::class.java),
+            "(" to Operator("(", 6, OperatorType.Binary, ExprNode::class.java),
+            ")" to Operator(")", 6, OperatorType.Binary, ExprNode::class.java),
+            "^" to Operator("^", 5, OperatorType.Binary, Exponent::class.java),
+            "/" to Operator("/", 4, OperatorType.Binary, Division::class.java),
             "*" to Operator("*", 3, OperatorType.Binary, Multiplication::class.java),
-            "/" to Operator("/", 3, OperatorType.Binary, Division::class.java),
-            "+" to Operator("+", 2, OperatorType.Binary, Addition::class.java),
             "-" to Operator("-", 2, OperatorType.Binary, Substraction::class.java),
+            "+" to Operator("+", 1, OperatorType.Binary, Addition::class.java),
             "=" to Operator("-", 0, OperatorType.Binary, Equals::class.java),
         )
 
@@ -78,7 +79,6 @@ class Parser {
      */
     fun tokenize(expr: String): List<String> {
         var list = mutableListOf<String>()
-        val operators = setOf('(', ')', '+', '-', '/', '*', '^', '=')
 
         var x = 0
         while (x < expr.length) {
@@ -97,7 +97,7 @@ class Parser {
                     list.add(value)
                 }
 
-                c in operators -> {
+                c.toString() in operators -> {
                     list.add(c.toString())
                     x++
                 }
@@ -157,16 +157,22 @@ class Parser {
 
         var parens = 0
 
-        // XXX: Might need to start from the right end to respect operation priority. Not quite sure
-        // yet.
-        for ((idx, entry) in elements.withIndex()) {
+        // Go right to left to handle left-associative operations like Substraction
+        for (idx in elements.indices.reversed()) {
+            val entry = elements[idx]
+
             when (entry) {
-                "(" -> parens++
-                ")" -> parens--
+                "(" -> parens--
+                ")" -> parens++
                 else -> {
                     val prio = getOperatorPrio(entry)
 
-                    if (prio < lowestValue && parens == 0) {
+                    if (parens > 0) {
+                        continue
+                    }
+
+                    // Special case for exponents which are right-associative
+                    if ((prio < lowestValue) || (entry == "^" && prio <= lowestValue)) {
                         lowestIndex = idx
                         lowestValue = prio
                     }
@@ -181,14 +187,6 @@ class Parser {
 
     private fun getOperatorPrio(s: String) = operators[s]?.prio ?: 98
 
-    private fun createUnaryOperator(
-        op: String,
-        node: ExprNode,
-    ) = when (op) {
-        "-" -> minusExpr(node)
-        else -> throw Exception("Unknown unary operator: '$op'")
-    }
-
     private fun createValueNode(s: String): ExprNode {
         if (s[0].isDigit()) {
             val i = if ('.' in s) s.toDouble() else s.toLong()
@@ -198,6 +196,14 @@ class Parser {
         }
 
         throw IllegalArgumentException("$s is not a number or a constant")
+    }
+
+    private fun createUnaryOperator(
+        op: String,
+        node: ExprNode,
+    ) = when (op) {
+        "-" -> minusExpr(node)
+        else -> throw Exception("Unknown unary operator: '$op'")
     }
 
     private fun createBinaryOperator(
@@ -220,10 +226,11 @@ class Parser {
     }
 
     /*
-     * Find the lowest prio operator, split list in two, recursively resolve both sides
+     * Find the lowest prio operator in the list, split list in two (both
+     * sides of the operator), then recursively resolve both sides.
      */
-    fun splitLowest(elements: List<String>): ExprNode {
-        // val idx = findLowestPriority(trimParens(elements))
+    fun splitLowest(list: List<String>): ExprNode {
+        val elements = trimParens(list)
         val idx = findLowestPriority(elements)
 
         val entry = elements.get(idx)
@@ -269,15 +276,35 @@ class Parser {
             else -> throw Exception("invalid type, '${n.javaClass}'")
         }
 
+    /*
+     * Expand expressions like "2x" into "2 * x"
+     */
+    fun expand(elements: List<String>): List<String> {
+        if (elements.size < 2) {
+            return elements
+        }
+
+        val list1 = elements.subList(0, elements.size - 1)
+        val list2 = elements.subList(1, elements.size)
+
+        val middle =
+            list1
+                .zip(list2) { a, b ->
+                    // Expressions like '2x' should be converted to '2*x'
+                    if (getOperatorType(a) == OperatorType.Value && getOperatorType(b) == OperatorType.Value) {
+                        listOf(a, "*")
+                    } else {
+                        listOf(a)
+                    }
+                }.flatten()
+
+        return middle + list2.last()
+    }
+
     fun parse(expr: String): ExprNode {
         val elements = tokenize(expr)
-        // val headNode = splitLowest(elements)
-
-        val headNode =
-            when (elements.size) {
-                1 -> createValueNode(elements.first())
-                else -> splitLowest(elements)
-            }
+        val expanded = expand(elements)
+        val headNode = splitLowest(expanded)
 
         return headNode
     }
