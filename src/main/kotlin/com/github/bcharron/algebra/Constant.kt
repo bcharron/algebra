@@ -1,5 +1,5 @@
 package com.github.bcharron.algebra
 
-class Constant(val n: Number): ExprNode() {
+class Constant(val n: Number): ValueNode() {
     override fun toString() = n.toString()
 }
