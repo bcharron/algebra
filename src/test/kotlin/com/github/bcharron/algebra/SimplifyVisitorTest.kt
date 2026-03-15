@@ -9,13 +9,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.currentStackTrace
 
-class EvalVisitorTest {
+class SimplifyVisitorTest {
     // @Test
     // fun basicVisitorTest() {
-    //     val node = Parser().parse("2x + 3 * 4")
+    //     val node = Parser().parse("4x - 2x + 4 = 10")
 
-    //     val b = Bindings(mapOf("x" to 1.0))
-    //     val v = EvalVisitor(b)
+    //     val v = SimplifyVisitor()
 
     //     val result = node.accept(v)
 

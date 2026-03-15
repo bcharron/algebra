@@ -8,6 +8,9 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.currentStackTrace
+import assertk.assertThat
+import assertk.assertions.*
+import com.github.bcharron.algebra.operations.Multiplication
 
 class ParserTest {
     @Test
@@ -99,11 +102,10 @@ class ParserTest {
 
         val tree = Parser().splitLowest(expr)
 
-        assertIs<Addition>(tree)
-        assertIs<Constant>(tree.left)
-        assertIs<Constant>(tree.right)
-        assertEquals(tree.left.n, 2L)
-        assertEquals(tree.right.n, 4L)
+        Addition(
+            Constant(2L),
+            Constant(4L)
+        ).assertTree(tree)
     }
 
     @Test
@@ -112,16 +114,13 @@ class ParserTest {
 
         val tree = Parser().splitLowest(expr)
 
-        assertIs<Addition>(tree)
-        assertIs<Constant>(tree.left)
-        assertEquals(tree.left.n, 2L)
-
-        val mul = tree.right
-        assertIs<Multiplication>(mul)
-        assertIs<Constant>(mul.left)
-        assertIs<Constant>(mul.right)
-        assertEquals(mul.left.n, 4L)
-        assertEquals(mul.right.n, 2L)
+        Addition(
+            Constant(2L),
+            Multiplication(
+                Constant(4L),
+                Constant(2L)
+            )
+        ).assertTree(tree)
     }
 
     @Test
@@ -130,16 +129,17 @@ class ParserTest {
 
         val tree = Parser().splitLowest(expr)
 
-        assertIs<Addition>(tree)
-        assertIs<Constant>(tree.right)
-        assertEquals(tree.right.n, 2L)
-
-        val mul = tree.left
-        assertIs<Multiplication>(mul)
-        assertIs<Constant>(mul.left)
-        assertIs<Constant>(mul.right)
-        assertEquals(mul.left.n, 2L)
-        assertEquals(mul.right.n, 4L)
+        Addition(
+            listOf(
+                Multiplication(
+                    listOf(
+                        Constant(2L),
+                        Constant(4L)
+                    )
+                ),
+                Constant(2L)
+            )
+        ).assertTree(tree)
     }
 
     @Test
@@ -148,17 +148,13 @@ class ParserTest {
 
         val tree = Parser().splitLowest(expr)
 
-        assertIs<Multiplication>(tree)
-        assertIs<Constant>(tree.left)
-        assertIs<Addition>(tree.right)
-        assertEquals(tree.left.n, 2L)
-
-        val add = tree.right
-        assertIs<Addition>(add)
-        assertIs<Constant>(add.left)
-        assertIs<Constant>(add.right)
-        assertEquals(add.left.n, 4L)
-        assertEquals(add.right.n, 2L)
+        Multiplication(
+            Constant(2L),
+            Addition(
+                Constant(4L),
+                Constant(2L)
+            )
+        ).assertTree(tree)
     }
 
     @Test
@@ -185,33 +181,28 @@ class ParserTest {
 
         val tree = Parser().parse(expr)
 
-        assertIs<Equals>(tree)
-        assertIs<Addition>(tree.left)
-        assertIs<Constant>(tree.right)
-        assertEquals(4L, tree.right.n)
-
-        val add = tree.left
-        assertIs<Addition>(add)
-        assertIs<Variable>(add.left)
-        assertIs<Constant>(add.right)
-        assertEquals(2L, add.right.n)
-        assertEquals("x", add.left.name)
+        val expected = Equals(
+            Addition(
+                listOf(
+                    Variable("x"),
+                    Constant(2)
+                ),
+            ),
+            Constant(4)
+        )
     }
 
     @Test
     fun testParseExpanded() {
         val tree = Parser().parse("2x^2")
 
-        assertIs<Multiplication>(tree)
-        assertIs<Constant>(tree.left)
-        assertIs<Exponent>(tree.right)
-        assertEquals(2L, tree.left.n)
-
-        val exp = tree.right
-        assertIs<Variable>(exp.left)
-        assertIs<Constant>(exp.right)
-        assertEquals("x", exp.left.name)
-        assertEquals(2L, exp.right.n)
+        Multiplication(
+            Constant(2L),
+            Exponent(
+                Variable("x"),
+                Constant(2L)
+            )
+        ).assertTree(tree)
     }
 
     @Test
@@ -243,73 +234,70 @@ class ParserTest {
     fun testParseMinusExpr() {
         val tree = Parser().parse("-(2+4)")
 
-        assertIs<Minus>(tree)
-        assertIs<Addition>(tree.value)
-
-        val add = tree.value
-        assertIs<Constant>(add.left)
-        assertIs<Constant>(add.right)
-        assertEquals(2L, add.left.n)
-        assertEquals(4L, add.right.n)
+        Minus(
+            Addition(
+                Constant(2L),
+                Constant(4L)
+            )
+        ).assertTree(tree)
     }
 
     @Test
     fun testParseParens() {
         val tree = Parser().parse("(2+3)")
 
-        assertIs<Addition>(tree)
-        assertIs<Constant>(tree.left)
-        assertIs<Constant>(tree.right)
-        assertEquals(2L, tree.left.n)
-        assertEquals(3L, tree.right.n)
+        Addition(
+            Constant(2L), Constant(3L)
+        ).assertTree(tree)
     }
 
     @Test
     fun testLeftAssociative() {
         val tree = Parser().parse("a - b - c")
 
-        assertIs<Substraction>(tree)
-        assertIs<Substraction>(tree.left)
-        assertIs<Variable>(tree.right)
-        assertEquals("c", tree.right.name)
-
-        val sub = tree.left
-        assertIs<Variable>(sub.left)
-        assertIs<Variable>(sub.right)
-        assertEquals("a", sub.left.name)
-        assertEquals("b", sub.right.name)
+        Substraction(
+            Substraction(
+                Variable("a"),
+                Variable("b")
+            ),
+            Variable("c")
+        ).assertTree(tree)
     }
 
     @Test
     fun testRightAssociative() {
         val tree = Parser().parse("2^3^4")
 
-        assertIs<Exponent>(tree)
-        assertIs<Constant>(tree.left)
-        assertIs<Exponent>(tree.right)
-        assertEquals(2L, tree.left.n)
-
-        val exp = tree.right
-
-        assertIs<Exponent>(exp)
-        assertIs<Constant>(exp.left)
-        assertIs<Constant>(exp.right)
-        assertEquals(3L, exp.left.n)
-        assertEquals(4L, exp.right.n)
+        Exponent(
+            Constant(2L),
+            Exponent(
+                Constant(3L),
+                Constant(4L)
+            )
+        ).assertTree(tree)
     }
 
     @Test
     fun testUltimateParse() {
         val tree = Parser().parse("2x^2+4x+9=0")
 
-        assertIs<Equals>(tree)
-        assertIs<Addition>(tree.left)
-        assertIs<Constant>(tree.right)
-
-        val add = tree.left
-
-        assertIs<Addition>(add.left)
-        assertIs<Constant>(add.right)
-        assertEquals(9L, add.right.n)
+        Equals(
+            Addition(
+                Addition(              
+                    Multiplication(
+                        Constant(2L),
+                        Exponent(
+                            Variable("x"),
+                            Constant(2L)
+                        )
+                    ),
+                    Multiplication(
+                        Constant(4L),
+                        Variable("x")
+                    )),
+                    Constant(9L)
+            ),
+            Constant(0L)
+        ).assertTree(tree)
     }
 }

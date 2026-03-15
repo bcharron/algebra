@@ -3,6 +3,7 @@ package com.github.bcharron.algebra
 // Find highest priority -> if nothing found, done
 // Resolve it, replace all matched tokens with ExprNode
 import com.github.bcharron.algebra.UnaryNode
+import com.github.bcharron.algebra.operations.Multiplication
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlin.collections.elementAtOrElse
@@ -218,9 +219,9 @@ class Parser {
         val expr =
             when (op) {
                 "^" -> Exponent(a, b)
-                "*" -> Multiplication(a, b)
+                "*" -> Multiplication(listOf(a, b))
                 "/" -> Division(a, b)
-                "+" -> Addition(a, b)
+                "+" -> Addition(listOf(a, b))
                 "-" -> Substraction(a, b)
                 "=" -> Equals(a, b)
                 else -> throw IllegalArgumentException("$op is not a binary operator")

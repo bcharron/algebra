@@ -1,4 +1,4 @@
 package com.github.bcharron.algebra
 
-abstract class ValueNode(): ExprNode() {
-}
+// Node with no children, like Variable or Constant
+abstract class ValueNode(): ExprNode(emptyList())
