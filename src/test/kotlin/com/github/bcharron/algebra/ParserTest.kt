@@ -10,7 +10,12 @@ import kotlin.test.assertTrue
 import kotlin.test.currentStackTrace
 import assertk.assertThat
 import assertk.assertions.*
+import com.github.bcharron.algebra.operations.Addition
+import com.github.bcharron.algebra.operations.Equals
+import com.github.bcharron.algebra.operations.Exponent
+import com.github.bcharron.algebra.operations.Minus
 import com.github.bcharron.algebra.operations.Multiplication
+import com.github.bcharron.algebra.operations.Substraction
 
 class ParserTest {
     @Test

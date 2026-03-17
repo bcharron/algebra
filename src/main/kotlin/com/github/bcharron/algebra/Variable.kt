@@ -1,7 +1,9 @@
 package com.github.bcharron.algebra
 
+import com.github.bcharron.algebra.extensions.plus
+import com.github.bcharron.algebra.operations.Addition
+import com.github.bcharron.algebra.operations.Exponent
 import com.github.bcharron.algebra.operations.Multiplication
-
 
 class Variable(val name: String) : ValueNode() {
     override fun toString() = name

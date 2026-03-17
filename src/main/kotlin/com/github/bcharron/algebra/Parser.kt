@@ -3,13 +3,19 @@ package com.github.bcharron.algebra
 // Find highest priority -> if nothing found, done
 // Resolve it, replace all matched tokens with ExprNode
 import com.github.bcharron.algebra.UnaryNode
+import com.github.bcharron.algebra.operations.Addition
+import com.github.bcharron.algebra.operations.Division
+import com.github.bcharron.algebra.operations.Equals
+import com.github.bcharron.algebra.operations.Exponent
+import com.github.bcharron.algebra.operations.Minus
 import com.github.bcharron.algebra.operations.Multiplication
+import com.github.bcharron.algebra.operations.Substraction
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlin.collections.elementAtOrElse
 
 class Parser {
-    private final enum class OperatorType {
+    private enum class OperatorType {
         Value,
         Unary,
         Binary,
@@ -22,7 +28,7 @@ class Parser {
         val cls: Class<out ExprNode>,
     )
 
-    private final val operators =
+    private val operators =
         mapOf(
             "(" to Operator("(", 6, OperatorType.Binary, ExprNode::class.java),
             ")" to Operator(")", 6, OperatorType.Binary, ExprNode::class.java),

@@ -1,5 +1,7 @@
 package com.github.bcharron.algebra
 
+import com.github.bcharron.algebra.operations.Addition
+import com.github.bcharron.algebra.operations.Exponent
 import com.github.bcharron.algebra.operations.Multiplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
